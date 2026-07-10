@@ -1,6 +1,6 @@
 # RawDrop — Support
 
-**For version:** 0.3.7 · **Updated:** 2026-07-10
+**For version:** 0.3.8 · **Updated:** 2026-07-10
 
 ## Getting help
 

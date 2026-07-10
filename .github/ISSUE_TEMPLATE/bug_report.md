@@ -28,7 +28,7 @@ What actually happened. Include exact error text if any.
 
 | Field | Value |
 |---|---|
-| RawDrop version | e.g. 0.3.7 |
+| RawDrop version | e.g. 0.3.8 |
 | macOS | e.g. 14.5 |
 | Hardware | e.g. M2 MacBook Air |
 | Install source | download / build from source |

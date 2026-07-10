@@ -4,7 +4,7 @@ Privacy & Permissions — only claim what is true of the shipping build.
 
 # RawDrop — Privacy & Permissions
 
-**Updated:** 2026-07-10 · **Version:** 0.3.7
+**Updated:** 2026-07-10 · **Version:** 0.3.8
 
 ## In one line
 

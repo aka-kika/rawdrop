@@ -2,6 +2,15 @@
 
 Append-only. Newest on top. What shipped — not why (see DECISIONS.md).
 
+## [0.3.8] — 2026-07-10
+
+### Added
+- First-run vault seeding: saving a Knowledge root creates `raw/`, `wiki/`, and `outputs/` if missing, plus a `RawDrop.md` explainer at the root — the app works out of the box on a fresh folder
+- App icon shown above the title in the README
+
+### Notes
+- Seeding is create-if-missing and never overwrites: a distinct `RawDrop.md` name avoids clobbering an existing `README.md`, and an edited `RawDrop.md` is preserved on re-save
+
 ## [0.3.7] — 2026-07-10
 
 ### Changed

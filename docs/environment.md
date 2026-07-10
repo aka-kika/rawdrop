@@ -5,7 +5,7 @@ Environment Setup — zero to running.
 <!-- SF Symbol: macbook.and.iphone -->
 # Environment Setup
 
-Project: RawDrop · **v0.3.7**  
+Project: RawDrop · **v0.3.8**  
 Last tested on: macOS 15/27-series host — 2026-07-10
 
 ---

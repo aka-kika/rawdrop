@@ -4,7 +4,7 @@ Roadmap — Now / Next / Later
 
 # RawDrop — Roadmap
 
-**Updated:** 2026-07-10 · **Current version:** 0.3.7
+**Updated:** 2026-07-10 · **Current version:** 0.3.8
 
 > Now = building it · Next = committed, not started · Later = directional, may change
 
@@ -33,6 +33,7 @@ Roadmap — Now / Next / Later
 ## Recently shipped
 
 <!-- SF Symbol: checkmark.circle -->
+- **0.3.8** — first-run vault seeding (raw/ wiki/ outputs/ + RawDrop.md explainer, create-if-missing); app icon in README.
 - **0.3.7** — lean wiki YAML (`sources` as `raw/…`); body hash in Application Support; no triple source_* properties.
 - **0.3.6** — screenshots, LICENSE, CONTRIBUTING, public-ready docs; default Knowledge path generic.
 - **0.3.5** — Compile button above capture list; compiled items dimmed.

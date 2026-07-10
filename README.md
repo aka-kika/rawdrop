@@ -55,7 +55,7 @@ Full inventory in **[FEATURES.md](./FEATURES.md)**.
 
 ## Install
 
-Download **[RawDrop 0.3.7 (.dmg)](https://github.com/aka-kika/rawdrop/releases/latest)**, open it, and drag **RawDrop** to **Applications**. Launch it — it appears in the menu bar (no Dock icon).
+Download **[RawDrop 0.3.8 (.dmg)](https://github.com/aka-kika/rawdrop/releases/latest)**, open it, and drag **RawDrop** to **Applications**. Launch it — it appears in the menu bar (no Dock icon).
 
 The app is a **universal binary** (Apple Silicon + Intel), **signed and notarized by Apple**, so it opens with no Gatekeeper warning.
 
