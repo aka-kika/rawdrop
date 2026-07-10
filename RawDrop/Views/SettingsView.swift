@@ -163,8 +163,8 @@ struct SettingsView: View {
 
             Section {
                 Button("Save") {
-                    applyToState()
-                    saveNote = "Saved"
+                    let seeded = applyToState()
+                    saveNote = seeded ? "Saved · vault ready" : "Saved"
                     keySaveError = nil
                 }
                 .keyboardShortcut(.defaultAction)
@@ -298,7 +298,10 @@ struct SettingsView: View {
         keySaveError = nil
     }
 
-    private func applyToState() {
+    /// Commits the edited fields into app state and seeds the Knowledge root's
+    /// structure. Returns true if seeding created any new folders or the explainer.
+    @discardableResult
+    private func applyToState() -> Bool {
         var s = appState.settings
         s.knowledgeRootPath = knowledgePath.trimmingCharacters(in: .whitespacesAndNewlines)
         s.ollamaPreset = preset
@@ -306,6 +309,9 @@ struct SettingsView: View {
         s.ollamaModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
         s.appearance = appearance
         appState.settings = s
+
+        // Create-if-missing scaffold (raw/ wiki/ outputs/ + RawDrop.md). Idempotent.
+        let seeded = VaultSeeder.seed(settings: s).didSomething
 
         do {
             try OllamaSecrets.setAPIKey(apiKey.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -317,6 +323,8 @@ struct SettingsView: View {
         appState.applyOllamaConfig()
         appState.applyAppearance()
         appState.syncOllamaStatusMessage()
+
+        return seeded
     }
 }
 

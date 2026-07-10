@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" alt="RawDrop app icon" width="120" />
+
 # RawDrop
 
 **Drop anything into your knowledge vault. Compile it into a wiki with one button.**

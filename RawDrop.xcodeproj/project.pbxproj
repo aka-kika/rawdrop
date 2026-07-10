@@ -21,6 +21,7 @@
 		9FE44819840EA6799CC71206 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E0B570035567B88883E8931 /* AppState.swift */; };
 		A1EB73BC484A91B35F827FAB /* IngestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D807C4BC3119B55037B5C068 /* IngestService.swift */; };
 		B828FA4FC8C372A5C0B11C47 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E2425F65E3D29B480D5C47 /* SettingsWindowController.swift */; };
+		BD077AE556E02E2C4DDCA284 /* VaultSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB507F4539D0343A1B2DC5AC /* VaultSeeder.swift */; };
 		CC04C119411AB7856AF30836 /* HTMLTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3946913B62891737E0AB7D11 /* HTMLTextExtractor.swift */; };
 		DD737B542B702B7D27BF65C4 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AD39CB528D48F6B32091FF /* KeychainStore.swift */; };
 		FA995533A13682D1E512CB04 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B542A4D5D829D1CF351A16A /* SettingsView.swift */; };
@@ -48,6 +49,7 @@
 		D6FD885AE37DAA0A68CF3687 /* RawDrop.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RawDrop.entitlements; sourceTree = "<group>"; };
 		D807C4BC3119B55037B5C068 /* IngestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngestService.swift; sourceTree = "<group>"; };
 		D8963E74267D60F3F3DEA38A /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		DB507F4539D0343A1B2DC5AC /* VaultSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSeeder.swift; sourceTree = "<group>"; };
 		FE6BE14FF75D0EDAD819A969 /* CompileState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompileState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -112,6 +114,7 @@
 				1A711A786199C3BAAB1F8236 /* LaunchAtLoginService.swift */,
 				4924E5345213B5BF5CD4C5BF /* ModelRecommendations.swift */,
 				A09557322147C3A4F822411A /* OllamaClient.swift */,
+				DB507F4539D0343A1B2DC5AC /* VaultSeeder.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -219,6 +222,7 @@
 				FA995533A13682D1E512CB04 /* SettingsView.swift in Sources */,
 				B828FA4FC8C372A5C0B11C47 /* SettingsWindowController.swift in Sources */,
 				5BE70F0E5594CD8CF6A025D4 /* StatusItemController.swift in Sources */,
+				BD077AE556E02E2C4DDCA284 /* VaultSeeder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
