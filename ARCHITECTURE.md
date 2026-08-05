@@ -22,6 +22,9 @@
        ▼
  CompileService ──write──► Knowledge/wiki/*.md  (lean YAML + ## Compiled)
                        └──► Knowledge/wiki/_index.md
+
+ LinkService ──rewrite──► Knowledge/wiki/*.md  (## Related sections only;
+                          relations chosen by the model, stored in compile-state)
 ```
 
 ## Module map
@@ -35,13 +38,14 @@ RawDrop/
     SettingsWindowController.swift   Dedicated settings NSWindow
   Models/
     AppSettings.swift                Path, Ollama, theme (UserDefaults)
-    CompileState.swift               Processed sources + article body hashes JSON
+    CompileState.swift               Processed sources + article body hashes + related titles JSON
   Services/
     IngestService.swift              Copy / URL fetch / data write
     ContentExtractor.swift           PDF / HTML / text / hash / chunk
     HTMLTextExtractor.swift          Shared HTML → markdown-ish
     OllamaClient.swift               tags + chat + connectivity test
     CompileService.swift             LLM pass + lean wiki writers + hybrid recompile
+    LinkService.swift                Link pass — model-picked ## Related sections
     ModelRecommendations.swift       Rank installed models
     KeychainStore.swift              API key
     LaunchAtLoginService.swift       SMAppService open-at-login

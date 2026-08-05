@@ -16,6 +16,8 @@ Inventory of what RawDrop does today. Keep this in sync with releases.
 | Collision-safe copy | Never overwrites; suffix ` 2`, ` 3`, … |
 | Never moves sources | Originals always untouched |
 | Capture list under Compile | Pending (full opacity) then compiled (dimmed); count on Compile button |
+| Remove capture (×) | Hover a pending row → × moves the raw file to Trash (recoverable), excluded from compile |
+| Duplicate warning | Pending captures with identical content (SHA-256) flagged orange, "duplicate of <original>" — uncompiled only |
 
 ## Compile
 
@@ -32,6 +34,19 @@ Inventory of what RawDrop does today. Keep this in sync with releases.
 | Hybrid recompile merge | Keep `## Human` / protected blocks; skip body if human-edited (internal body hash); else refresh `## Compiled` only |
 | Progress UI | In-popover status + macOS notification on finish |
 | Ollama down | Clear error, no crash, no partial silent writes of half-pass |
+| Title hygiene | Markdown emphasis / backticks / `#` stripped from model titles and tags |
+
+## Link pass
+
+| Feature | Detail |
+|---|---|
+| Link button | Next to Compile — cross-links wiki articles |
+| `## Related` section | Machine-owned, up to 5 `[[wikilinks]]` per article; prose / `## Human` / `## Sources` untouched |
+| Exact-title validation | Model picks only from real article titles — no invented links |
+| Incremental + resumable | Only never-linked articles; state saved per article (`articleRelated` in compile-state) |
+| Empty reply OK | "Nothing related" is a valid answer; transient errors skip the article and retry next pass |
+| Compile-safe | Related is stored in compile-state and excluded from the human-edit hash, so compile and link passes never fight |
+| Done notification | macOS notification when the pass finishes |
 
 ## Settings
 
@@ -41,6 +56,8 @@ Inventory of what RawDrop does today. Keep this in sync with releases.
 | Endpoint | Local Ollama ↔ Ollama Cloud |
 | Base URL | Default `http://localhost:11434` / `https://ollama.com` |
 | API key | Cloud; stored in **Keychain** only |
+| Save Key + Saved ✓ | Inline save with green indicator; other form fields untouched |
+| Save closes window | Save applies everything and closes Settings (stays open on Keychain error) |
 | Model dropdown | Full list from `GET /api/tags` |
 | Recommended models | Ranked subset of *installed* models for wiki work |
 | Use top pick | One-click best recommendation |
