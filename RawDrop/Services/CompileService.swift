@@ -983,7 +983,7 @@ enum CompileService {
         return f.string(from: Date())
     }
 
-    private static func notify(_ body: String) {
+    static func notify(_ body: String) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }

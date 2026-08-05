@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var appearance: AppAppearance = .system
     @State private var saveNote: String?
     @State private var keySaveError: String?
+    @State private var keySaved = false
 
     var body: some View {
         Form {
@@ -85,10 +86,20 @@ struct SettingsView: View {
                     HStack(spacing: 8) {
                         SecureField("API key", text: $apiKey)
                             .textFieldStyle(.roundedBorder)
+                            .onChange(of: apiKey) { _, _ in
+                                keySaved = false
+                            }
                         Button("Save Key") {
                             saveAPIKeyOnly()
                         }
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        if keySaved {
+                            Label("Saved", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                                .labelStyle(.titleAndIcon)
+                                .transition(.opacity)
+                        }
                     }
                     Text("Keychain only. Create at ollama.com/settings/keys. Save Key stores it right away — other settings stay as they are.")
                         .font(.caption)
@@ -271,9 +282,10 @@ struct SettingsView: View {
         do {
             try OllamaSecrets.setAPIKey(apiKey.trimmingCharacters(in: .whitespacesAndNewlines))
             keySaveError = nil
-            saveNote = "API key saved"
+            withAnimation { keySaved = true }
             appState.applyOllamaConfig()
         } catch {
+            keySaved = false
             keySaveError = error.localizedDescription
         }
     }

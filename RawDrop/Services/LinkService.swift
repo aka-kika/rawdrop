@@ -144,6 +144,7 @@ enum LinkService {
         }
 
         await onProgress(.finished(updated: updated))
+        CompileService.notify("Link pass done: \(updated) of \(todo.count) articles got related links")
         return updated
     }
 

@@ -12,6 +12,8 @@ Append-only. Newest on top. What shipped — not why (see DECISIONS.md).
 
 ### Changed
 - Settings **Save** now applies and closes the window (stays open only if the Keychain write fails, with the error shown)
+- "Save Key" shows a green **Saved ✓** indicator inline (clears when the key is edited)
+- Link pass posts a notification when done (compile already did); an empty model reply now counts as "no related articles" instead of aborting the pass, and transient errors skip the article with retry on the next pass
 
 ### Fixed
 - Model output markdown (`**bold**`, backticks, `#`) no longer leaks into article titles — previously produced junk wiki filenames like `-- --Topic--.md`, broken `[[wikilinks]]` in `_index.md`, and polluted tags
