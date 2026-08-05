@@ -73,23 +73,46 @@ struct PopoverView: View {
 
     private var compileSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Button {
-                Task { await appState.compile() }
-            } label: {
-                HStack {
-                    if appState.isCompiling {
+            HStack(spacing: 6) {
+                Button {
+                    Task { await appState.compile() }
+                } label: {
+                    HStack {
+                        if appState.isCompiling {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(compileButtonTitle)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
+                .disabled(appState.isCompiling || appState.isLinking || (appState.pendingCaptures.isEmpty && !appState.isCompiling))
+
+                Button {
+                    Task { await appState.linkWiki() }
+                } label: {
+                    if appState.isLinking {
                         ProgressView()
                             .controlSize(.small)
+                    } else {
+                        Image(systemName: "link")
                     }
-                    Text(compileButtonTitle)
-                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .disabled(appState.isCompiling || appState.isLinking)
+                .help("Link pass — cross-link wiki articles (adds ## Related sections)")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
-            .disabled(appState.isCompiling || (appState.pendingCaptures.isEmpty && !appState.isCompiling))
 
             if let progress = appState.compilePhase.progressText, appState.isCompiling || isTerminal(appState.compilePhase) {
+                Text(progress)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let progress = appState.linkPhase.progressText, appState.isLinking || isLinkTerminal(appState.linkPhase) {
                 Text(progress)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -238,6 +261,13 @@ struct PopoverView: View {
     private func isTerminal(_ phase: CompilePhase) -> Bool {
         switch phase {
         case .finished, .nothingNew, .failed: return true
+        default: return false
+        }
+    }
+
+    private func isLinkTerminal(_ phase: LinkPhase) -> Bool {
+        switch phase {
+        case .finished, .nothingToLink, .failed: return true
         default: return false
         }
     }

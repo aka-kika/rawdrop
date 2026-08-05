@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		013A01FD88841D040916978A /* ModelRecommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4924E5345213B5BF5CD4C5BF /* ModelRecommendations.swift */; };
+		0F6931301CEB30AD58179163 /* LinkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685D9D50A6E9D36C976C996B /* LinkService.swift */; };
 		189E4B8C3C2795391FD6FA79 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC58C5E7B97ECE28EB615DB /* AppSettings.swift */; };
 		1D26A52123B07A788A312D94 /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27733D0A06BCB0B3255AEEE7 /* PopoverView.swift */; };
 		3034F5C5F2829CF4136F0DE8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24E28E9DDB1954343028A75C /* Assets.xcassets */; };
@@ -38,6 +39,7 @@
 		3946913B62891737E0AB7D11 /* HTMLTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLTextExtractor.swift; sourceTree = "<group>"; };
 		4924E5345213B5BF5CD4C5BF /* ModelRecommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRecommendations.swift; sourceTree = "<group>"; };
 		5E0B570035567B88883E8931 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		685D9D50A6E9D36C976C996B /* LinkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkService.swift; sourceTree = "<group>"; };
 		71E2425F65E3D29B480D5C47 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		80960F5D8C9849278259C206 /* CompileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompileService.swift; sourceTree = "<group>"; };
 		8B542A4D5D829D1CF351A16A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				D807C4BC3119B55037B5C068 /* IngestService.swift */,
 				D6AD39CB528D48F6B32091FF /* KeychainStore.swift */,
 				1A711A786199C3BAAB1F8236 /* LaunchAtLoginService.swift */,
+				685D9D50A6E9D36C976C996B /* LinkService.swift */,
 				4924E5345213B5BF5CD4C5BF /* ModelRecommendations.swift */,
 				A09557322147C3A4F822411A /* OllamaClient.swift */,
 				DB507F4539D0343A1B2DC5AC /* VaultSeeder.swift */,
@@ -215,6 +218,7 @@
 				A1EB73BC484A91B35F827FAB /* IngestService.swift in Sources */,
 				DD737B542B702B7D27BF65C4 /* KeychainStore.swift in Sources */,
 				5CA5FE0AD706CF863A2FA222 /* LaunchAtLoginService.swift in Sources */,
+				0F6931301CEB30AD58179163 /* LinkService.swift in Sources */,
 				013A01FD88841D040916978A /* ModelRecommendations.swift in Sources */,
 				4F0D4EAF54C5C21DFD040A4B /* OllamaClient.swift in Sources */,
 				1D26A52123B07A788A312D94 /* PopoverView.swift in Sources */,

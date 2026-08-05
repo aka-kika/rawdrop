@@ -17,9 +17,11 @@ final class AppState {
     var isRefreshingModels: Bool = false
 
     var compilePhase: CompilePhase = .idle
+    var linkPhase: LinkPhase = .idle
     var statusMessage: String = "Ready"
     var lastIngestMessage: String?
     var isCompiling: Bool = false
+    var isLinking: Bool = false
     var isIngestingPaste: Bool = false
     var recentIngests: [String] = []
     /// All raw captures: pending first, then compiled (for the list under Compile).
@@ -176,7 +178,7 @@ final class AppState {
     /// Used so the popover never shows a stale model name after Settings changes.
     func syncOllamaStatusMessage() {
         // Don't clobber active work feedback
-        if isCompiling || isIngestingPaste { return }
+        if isCompiling || isLinking || isIngestingPaste { return }
         let transientPrefixes = [
             "Copied ", "Captured ", "Fetched ", "Compiling", "Done:", "Nothing new"
         ]
@@ -189,7 +191,7 @@ final class AppState {
 
     /// Live line for the popover header (always uses current `settings.ollamaModel` when idle).
     var displayStatusLine: String {
-        if isCompiling || isIngestingPaste {
+        if isCompiling || isLinking || isIngestingPaste {
             return statusMessage
         }
         // Recent action feedback — keep it until the next Ollama sync/open
@@ -507,6 +509,32 @@ final class AppState {
 
         isCompiling = false
         refreshPendingCaptures()
+    }
+
+    /// Cross-link wiki articles (## Related sections) with the configured model.
+    func linkWiki() async {
+        guard !isLinking, !isCompiling else { return }
+        isLinking = true
+        linkPhase = .preparing
+        statusMessage = "Linking wiki…"
+        applyOllamaConfig()
+
+        do {
+            _ = try await LinkService.run(
+                settings: settings,
+                ollama: ollama
+            ) { [weak self] phase in
+                self?.linkPhase = phase
+                if let text = phase.progressText {
+                    self?.statusMessage = text
+                }
+            }
+        } catch {
+            linkPhase = .failed(error.localizedDescription)
+            statusMessage = error.localizedDescription
+        }
+
+        isLinking = false
     }
 
     func openSettings() {
