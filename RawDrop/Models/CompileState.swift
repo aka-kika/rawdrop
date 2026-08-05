@@ -41,6 +41,24 @@ struct CaptureItem: Identifiable, Equatable, Hashable {
     let modifiedAt: Date?
     /// false = waiting to compile; true = compiled (shown dimmed at bottom of list)
     let isCompiled: Bool
+    /// Set when this pending capture has the same content as another pending capture.
+    var duplicateOf: String?
+
+    init(
+        filename: String,
+        byteCount: Int64?,
+        modifiedAt: Date?,
+        isCompiled: Bool,
+        duplicateOf: String? = nil
+    ) {
+        self.filename = filename
+        self.byteCount = byteCount
+        self.modifiedAt = modifiedAt
+        self.isCompiled = isCompiled
+        self.duplicateOf = duplicateOf
+    }
+
+    var isDuplicate: Bool { duplicateOf != nil }
 
     var detailLabel: String {
         var parts: [String] = []
@@ -55,6 +73,9 @@ struct CaptureItem: Identifiable, Equatable, Hashable {
         }
         if isCompiled {
             parts.append("compiled")
+        }
+        if let duplicateOf {
+            parts.append("duplicate of \(duplicateOf)")
         }
         return parts.joined(separator: " · ")
     }

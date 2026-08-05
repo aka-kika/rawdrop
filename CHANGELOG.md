@@ -2,6 +2,20 @@
 
 Append-only. Newest on top. What shipped — not why (see DECISIONS.md).
 
+## [0.4.0] — 2026-08-05
+
+### Added
+- Remove button (×) on pending capture rows — hover a row to drop a mistaken insert; the raw file moves to the Trash (recoverable) and is excluded from the compile
+- Duplicate warning for uncompiled captures: pending items with identical content are flagged orange with "duplicate of <original>" (compiled sources are never flagged)
+- "Save Key" button next to the Ollama Cloud API key — stores the key in the Keychain immediately without touching the rest of the form
+
+### Changed
+- Settings **Save** now applies and closes the window (stays open only if the Keychain write fails, with the error shown)
+
+### Fixed
+- Model output markdown (`**bold**`, backticks, `#`) no longer leaks into article titles — previously produced junk wiki filenames like `-- --Topic--.md`, broken `[[wikilinks]]` in `_index.md`, and polluted tags
+- Doubled `## Compiled` headings: the model echoing the heading inside the body is stripped on write, and already-damaged articles heal on the next compile pass
+
 ## [0.3.8] — 2026-07-10
 
 ### Added

@@ -245,6 +245,8 @@ enum CompileService {
             let tags = tagsLine
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().replacingOccurrences(of: " ", with: "-") }
+                .map { $0.filter { c in c.isLetter || c.isNumber || c == "-" } }
+                .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "-")) }
                 .filter { !$0.isEmpty }
             var body = ""
             if let bodyRange = block.range(of: #"BODY:\s*"#, options: .regularExpression) {
@@ -296,7 +298,7 @@ enum CompileService {
         let dest = wikiURL.appendingPathComponent(filename)
         let today = Self.todayString()
         let tags = article.tags.map { $0 }.joined(separator: ", ")
-        let newCompiled = stripSourcesSection(article.body)
+        let newCompiled = stripCompiledHeadings(stripSourcesSection(article.body))
         let sourceRef = normalizeSourceRef(sourceFilename)
 
         var state = CompileStateStore.load()
@@ -569,6 +571,12 @@ enum CompileService {
     /// Split article body into title, optional Human section, and compiled prose.
     private static func parseArticleBody(_ bodyWithMaybeHeading: String) -> ParsedArticleBody {
         var rest = stripSourcesSection(bodyWithMaybeHeading)
+        // Heal doubled "## Compiled" headings from earlier compiles
+        rest = rest.replacingOccurrences(
+            of: #"(?m)(^##\s+Compiled\s*\n)(\s*##\s+Compiled\s*\n)+"#,
+            with: "$1",
+            options: .regularExpression
+        )
         var title = ""
         if let heading = firstMatch(#"^#\s+(.+)$"#, in: rest) {
             title = heading.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -836,6 +844,16 @@ enum CompileService {
         return sources
     }
 
+    /// Models sometimes echo the "## Compiled" heading inside the article body;
+    /// remove it so renderArticleMarkdown doesn't double it.
+    private static func stripCompiledHeadings(_ body: String) -> String {
+        body.replacingOccurrences(
+            of: #"(?m)^##\s+Compiled\s*$\n?"#,
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private static func stripSourcesSection(_ body: String) -> String {
         if let range = body.range(of: #"\n## Sources\b[\s\S]*$"#, options: .regularExpression) {
             return String(body[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -857,10 +875,15 @@ enum CompileService {
     }
 
     private static func sanitizeTitle(_ title: String) -> String {
-        title
+        var s = title
             .replacingOccurrences(of: "[", with: "")
             .replacingOccurrences(of: "]", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "*", with: "")
+            .replacingOccurrences(of: "`", with: "")
+            .replacingOccurrences(of: "#", with: "")
+        s = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        s = s.trimmingCharacters(in: CharacterSet(charactersIn: "-–—_ \"'"))
+        return s
     }
 
     private static func sanitizeFilename(_ title: String) -> String {
