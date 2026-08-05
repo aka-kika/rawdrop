@@ -42,9 +42,13 @@ Two jobs, nothing more.
 
 **2 — Compile.** One button. For every raw file not yet processed (tracked by content hash): chunk → summarize via Ollama `/api/chat` → write concept articles under `Knowledge/wiki/` with origin frontmatter → update `wiki/_index.md`. Process state lives in `~/Library/Application Support/RawDrop/` — **not** in your vault.
 
+**+ Link.** The link button next to Compile cross-links the wiki: the model picks each article's few genuinely related neighbors and writes them into a machine-owned `## Related` section. Incremental (only new articles), resumable, and it never touches your prose.
+
 ## Features
 
 - **Menu bar popover** — drop zone, ⌘V capture, one Compile button, capture list, Settings / Quit. No Dock icon.
+- **Link pass** — one-click wiki cross-linking into `## Related` sections; exact-title validation so the model can't invent links.
+- **Capture hygiene** — hover a pending capture for a **×** that trashes it (recoverable) before compile; identical pending captures get a duplicate warning.
 - **Local or cloud Ollama** — default `http://localhost:11434`, or Ollama Cloud with an API key stored in the macOS Keychain.
 - **Smart model picker** — recommended models ranked from what you have installed, plus a connectivity test.
 - **Broad capture** — HTML extraction, PDF text (PDFKit), image paste as PNG, URL fetch → Markdown.
@@ -55,7 +59,7 @@ Full inventory in **[FEATURES.md](./FEATURES.md)**.
 
 ## Install
 
-Download **[RawDrop 0.3.8 (.dmg)](https://github.com/aka-kika/rawdrop/releases/latest)**, open it, and drag **RawDrop** to **Applications**. Launch it — it appears in the menu bar (no Dock icon).
+Download **[RawDrop 0.4.0 (.dmg)](https://github.com/aka-kika/rawdrop/releases/latest)**, open it, and drag **RawDrop** to **Applications**. Launch it — it appears in the menu bar (no Dock icon).
 
 The app is a **universal binary** (Apple Silicon + Intel), **signed and notarized by Apple**, so it opens with no Gatekeeper warning.
 

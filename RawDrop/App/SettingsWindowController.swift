@@ -80,6 +80,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         // SwiftUI recolors via preferredColorScheme bound to appState in SettingsView.
     }
 
+    /// Close the settings window (used by Save).
+    func close() {
+        window?.close()
+    }
+
     func windowWillClose(_ notification: Notification) {
         DispatchQueue.main.async {
             NSApp.setActivationPolicy(.accessory)

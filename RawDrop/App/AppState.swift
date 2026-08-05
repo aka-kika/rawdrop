@@ -17,9 +17,11 @@ final class AppState {
     var isRefreshingModels: Bool = false
 
     var compilePhase: CompilePhase = .idle
+    var linkPhase: LinkPhase = .idle
     var statusMessage: String = "Ready"
     var lastIngestMessage: String?
     var isCompiling: Bool = false
+    var isLinking: Bool = false
     var isIngestingPaste: Bool = false
     var recentIngests: [String] = []
     /// All raw captures: pending first, then compiled (for the list under Compile).
@@ -71,14 +73,16 @@ final class AppState {
 
         var pending: [CaptureItem] = []
         var compiled: [CaptureItem] = []
+        var pendingHashes: [String: String] = [:]  // filename → content hash
         for url in urls {
             let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .contentModificationDateKey, .fileSizeKey])
             guard values?.isRegularFile == true else { continue }
             let name = url.lastPathComponent
             let size = Int64(values?.fileSize ?? 0)
             let modified = values?.contentModificationDate
+            let hash = try? ContentExtractor.sha256(of: url)
             let isCompiled: Bool
-            if let hash = try? ContentExtractor.sha256(of: url),
+            if let hash,
                let existing = state.processed[name],
                existing.contentHash == hash {
                 isCompiled = true
@@ -94,14 +98,46 @@ final class AppState {
             if isCompiled {
                 compiled.append(item)
             } else {
+                if let hash { pendingHashes[name] = hash }
                 pending.append(item)
             }
         }
+
+        // Duplicate warning — uncompiled only: same content hash as an earlier pending capture.
+        var firstSeen: [String: String] = [:]  // hash → filename that keeps the original claim
+        for item in pending.sorted(by: { ($0.modifiedAt ?? .distantPast) < ($1.modifiedAt ?? .distantPast) }) {
+            guard let hash = pendingHashes[item.filename] else { continue }
+            if firstSeen[hash] == nil {
+                firstSeen[hash] = item.filename
+            }
+        }
+        pending = pending.map { item in
+            guard let hash = pendingHashes[item.filename],
+                  let original = firstSeen[hash],
+                  original != item.filename else { return item }
+            var marked = item
+            marked.duplicateOf = original
+            return marked
+        }
+
         let byName: (CaptureItem, CaptureItem) -> Bool = {
             $0.filename.localizedCaseInsensitiveCompare($1.filename) == .orderedAscending
         }
         // Pending (needs compile) on top; compiled below at 50% opacity in the UI
         captureList = pending.sorted(by: byName) + compiled.sorted(by: byName)
+    }
+
+    /// Drop a mistaken capture: move the raw file to the Trash (recoverable) so it
+    /// never enters the compile. Pending items only — compiled sources stay.
+    func removeCapture(_ item: CaptureItem) {
+        let url = settings.rawURL.appendingPathComponent(item.filename)
+        do {
+            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            statusMessage = "Removed \(item.filename) — recoverable in Trash"
+        } catch {
+            statusMessage = "Could not remove: \(error.localizedDescription)"
+        }
+        refreshPendingCaptures()
     }
 
     func refreshLaunchAtLoginStatus() {
@@ -142,7 +178,7 @@ final class AppState {
     /// Used so the popover never shows a stale model name after Settings changes.
     func syncOllamaStatusMessage() {
         // Don't clobber active work feedback
-        if isCompiling || isIngestingPaste { return }
+        if isCompiling || isLinking || isIngestingPaste { return }
         let transientPrefixes = [
             "Copied ", "Captured ", "Fetched ", "Compiling", "Done:", "Nothing new"
         ]
@@ -155,7 +191,7 @@ final class AppState {
 
     /// Live line for the popover header (always uses current `settings.ollamaModel` when idle).
     var displayStatusLine: String {
-        if isCompiling || isIngestingPaste {
+        if isCompiling || isLinking || isIngestingPaste {
             return statusMessage
         }
         // Recent action feedback — keep it until the next Ollama sync/open
@@ -473,6 +509,32 @@ final class AppState {
 
         isCompiling = false
         refreshPendingCaptures()
+    }
+
+    /// Cross-link wiki articles (## Related sections) with the configured model.
+    func linkWiki() async {
+        guard !isLinking, !isCompiling else { return }
+        isLinking = true
+        linkPhase = .preparing
+        statusMessage = "Linking wiki…"
+        applyOllamaConfig()
+
+        do {
+            _ = try await LinkService.run(
+                settings: settings,
+                ollama: ollama
+            ) { [weak self] phase in
+                self?.linkPhase = phase
+                if let text = phase.progressText {
+                    self?.statusMessage = text
+                }
+            }
+        } catch {
+            linkPhase = .failed(error.localizedDescription)
+            statusMessage = error.localizedDescription
+        }
+
+        isLinking = false
     }
 
     func openSettings() {

@@ -14,22 +14,31 @@ struct CompileStateFile: Codable, Equatable {
     /// wiki article filename (e.g. "Topic.md") → body content hash for recompile safety.
     /// Kept here (not in YAML) so Obsidian properties stay clean.
     var articleBodyHashes: [String: String]
+    /// wiki article filename → related article titles (rendered as the ## Related section).
+    /// Machine-owned like ## Compiled — the link pass regenerates it.
+    var articleRelated: [String: [String]]
 
     static let empty = CompileStateFile(processed: [:], articleBodyHashes: [:])
 
     enum CodingKeys: String, CodingKey {
-        case processed, articleBodyHashes
+        case processed, articleBodyHashes, articleRelated
     }
 
-    init(processed: [String: ProcessedSource], articleBodyHashes: [String: String] = [:]) {
+    init(
+        processed: [String: ProcessedSource],
+        articleBodyHashes: [String: String] = [:],
+        articleRelated: [String: [String]] = [:]
+    ) {
         self.processed = processed
         self.articleBodyHashes = articleBodyHashes
+        self.articleRelated = articleRelated
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         processed = try c.decodeIfPresent([String: ProcessedSource].self, forKey: .processed) ?? [:]
         articleBodyHashes = try c.decodeIfPresent([String: String].self, forKey: .articleBodyHashes) ?? [:]
+        articleRelated = try c.decodeIfPresent([String: [String]].self, forKey: .articleRelated) ?? [:]
     }
 }
 
@@ -41,6 +50,24 @@ struct CaptureItem: Identifiable, Equatable, Hashable {
     let modifiedAt: Date?
     /// false = waiting to compile; true = compiled (shown dimmed at bottom of list)
     let isCompiled: Bool
+    /// Set when this pending capture has the same content as another pending capture.
+    var duplicateOf: String?
+
+    init(
+        filename: String,
+        byteCount: Int64?,
+        modifiedAt: Date?,
+        isCompiled: Bool,
+        duplicateOf: String? = nil
+    ) {
+        self.filename = filename
+        self.byteCount = byteCount
+        self.modifiedAt = modifiedAt
+        self.isCompiled = isCompiled
+        self.duplicateOf = duplicateOf
+    }
+
+    var isDuplicate: Bool { duplicateOf != nil }
 
     var detailLabel: String {
         var parts: [String] = []
@@ -55,6 +82,9 @@ struct CaptureItem: Identifiable, Equatable, Hashable {
         }
         if isCompiled {
             parts.append("compiled")
+        }
+        if let duplicateOf {
+            parts.append("duplicate of \(duplicateOf)")
         }
         return parts.joined(separator: " · ")
     }

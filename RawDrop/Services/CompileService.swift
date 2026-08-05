@@ -245,6 +245,8 @@ enum CompileService {
             let tags = tagsLine
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().replacingOccurrences(of: " ", with: "-") }
+                .map { $0.filter { c in c.isLetter || c.isNumber || c == "-" } }
+                .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "-")) }
                 .filter { !$0.isEmpty }
             var body = ""
             if let bodyRange = block.range(of: #"BODY:\s*"#, options: .regularExpression) {
@@ -296,7 +298,7 @@ enum CompileService {
         let dest = wikiURL.appendingPathComponent(filename)
         let today = Self.todayString()
         let tags = article.tags.map { $0 }.joined(separator: ", ")
-        let newCompiled = stripSourcesSection(article.body)
+        let newCompiled = stripCompiledHeadings(stripSourcesSection(article.body))
         let sourceRef = normalizeSourceRef(sourceFilename)
 
         var state = CompileStateStore.load()
@@ -375,7 +377,8 @@ enum CompileService {
                 sources: sources,
                 sourceURLs: sourceURLs,
                 humanSection: parsed.humanSection,
-                compiledBody: parsed.compiledBody
+                compiledBody: parsed.compiledBody,
+                related: state.articleRelated[filename] ?? []
             )
         case .replaceCompiled:
             let title = article.title
@@ -393,7 +396,8 @@ enum CompileService {
                 sources: sources,
                 sourceURLs: sourceURLs,
                 humanSection: humanSection,
-                compiledBody: newCompiled
+                compiledBody: newCompiled,
+                related: state.articleRelated[filename] ?? []
             )
         }
 
@@ -488,9 +492,57 @@ enum CompileService {
             sources: sources,
             sourceURLs: sourceURLs,
             humanSection: parsed.humanSection,
-            compiledBody: parsed.compiledBody
+            compiledBody: parsed.compiledBody,
+            related: state.articleRelated[wikiName] ?? []
         )
         try content.write(to: dest, atomically: true, encoding: .utf8)
+    }
+
+    // MARK: - Link pass support
+
+    /// Rewrite one wiki article preserving all prose, refreshing only the
+    /// machine-owned ## Related section from the given titles.
+    static func rewriteRelated(at dest: URL, related: [String]) throws {
+        guard let existing = try? String(contentsOf: dest, encoding: .utf8) else { return }
+        let date = parseFrontmatterValue(key: "date", in: existing) ?? todayString()
+        let tags = parseFrontmatterValue(key: "tags", in: existing) ?? "[compiled]"
+        let status = parseFrontmatterValue(key: "status", in: existing) ?? "active"
+        let type = parseFrontmatterValue(key: "type", in: existing) ?? "note"
+        let sources = parseSourcesList(from: existing).map(normalizeSourceRef)
+        let sourceURLs = parseSourceURLsFromBody(existing)
+        let parsed = parseArticleBody(stripFrontmatter(existing))
+        let title = parsed.title.isEmpty ? dest.deletingPathExtension().lastPathComponent : parsed.title
+
+        let content = renderArticleMarkdown(
+            title: title,
+            date: date,
+            compiled: parseFrontmatterValue(key: "compiled", in: existing) ?? todayString(),
+            tagsBracket: tags.hasPrefix("[") ? tags : "[\(tags)]",
+            type: type,
+            status: status,
+            sources: sources,
+            sourceURLs: sourceURLs,
+            humanSection: parsed.humanSection,
+            compiledBody: parsed.compiledBody,
+            related: related
+        )
+        try content.write(to: dest, atomically: true, encoding: .utf8)
+    }
+
+    /// Title of a wiki article (H1 if present, else filename).
+    static func articleTitle(of url: URL) -> String {
+        if let text = try? String(contentsOf: url, encoding: .utf8),
+           let h1 = firstMatch(#"^#\s+(.+)$"#, in: stripFrontmatter(text)) {
+            return h1.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return url.deletingPathExtension().lastPathComponent
+    }
+
+    /// Compiled-body excerpt used as linking context.
+    static func articleExcerpt(of url: URL, limit: Int = 900) -> String {
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
+        let parsed = parseArticleBody(stripFrontmatter(text))
+        return String(parsed.compiledBody.prefix(limit))
     }
 
     /// Lean YAML for Obsidian properties — no redundant source_* / body_hash.
@@ -504,7 +556,8 @@ enum CompileService {
         sources: [String],
         sourceURLs: [String: String],
         humanSection: String?,
-        compiledBody: String
+        compiledBody: String,
+        related: [String] = []
     ) -> String {
         var middle = ""
         if let human = humanSection?.trimmingCharacters(in: .whitespacesAndNewlines), !human.isEmpty {
@@ -516,6 +569,13 @@ enum CompileService {
         middle += "## Compiled\n\n"
         middle += compiledText
         if !compiledText.isEmpty { middle += "\n" }
+
+        let relatedFiltered = related.filter { $0 != title }
+        if !relatedFiltered.isEmpty {
+            middle += "\n## Related\n\n"
+            middle += relatedFiltered.map { "- [[\($0)]]" }.joined(separator: "\n")
+            middle += "\n"
+        }
 
         let sourceLines = sources.map { ref in
             sourceLine(ref, url: sourceURLs[ref])
@@ -568,7 +628,13 @@ enum CompileService {
 
     /// Split article body into title, optional Human section, and compiled prose.
     private static func parseArticleBody(_ bodyWithMaybeHeading: String) -> ParsedArticleBody {
-        var rest = stripSourcesSection(bodyWithMaybeHeading)
+        var rest = stripRelatedSection(stripSourcesSection(bodyWithMaybeHeading))
+        // Heal doubled "## Compiled" headings from earlier compiles
+        rest = rest.replacingOccurrences(
+            of: #"(?m)(^##\s+Compiled\s*\n)(\s*##\s+Compiled\s*\n)+"#,
+            with: "$1",
+            options: .regularExpression
+        )
         var title = ""
         if let heading = firstMatch(#"^#\s+(.+)$"#, in: rest) {
             title = heading.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -836,11 +902,31 @@ enum CompileService {
         return sources
     }
 
+    /// Models sometimes echo the "## Compiled" heading inside the article body;
+    /// remove it so renderArticleMarkdown doesn't double it.
+    private static func stripCompiledHeadings(_ body: String) -> String {
+        body.replacingOccurrences(
+            of: #"(?m)^##\s+Compiled\s*$\n?"#,
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private static func stripSourcesSection(_ body: String) -> String {
         if let range = body.range(of: #"\n## Sources\b[\s\S]*$"#, options: .regularExpression) {
             return String(body[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return body.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// ## Related is machine-owned (regenerated from state by the link pass) —
+    /// keep it out of the parsed body and the content hash.
+    private static func stripRelatedSection(_ body: String) -> String {
+        body.replacingOccurrences(
+            of: #"(?m)^## Related\s*\n[\s\S]*?(?=^## |\z)"#,
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func escapeYAML(_ s: String) -> String {
@@ -857,10 +943,15 @@ enum CompileService {
     }
 
     private static func sanitizeTitle(_ title: String) -> String {
-        title
+        var s = title
             .replacingOccurrences(of: "[", with: "")
             .replacingOccurrences(of: "]", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "*", with: "")
+            .replacingOccurrences(of: "`", with: "")
+            .replacingOccurrences(of: "#", with: "")
+        s = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        s = s.trimmingCharacters(in: CharacterSet(charactersIn: "-–—_ \"'"))
+        return s
     }
 
     private static func sanitizeFilename(_ title: String) -> String {
@@ -892,7 +983,7 @@ enum CompileService {
         return f.string(from: Date())
     }
 
-    private static func notify(_ body: String) {
+    static func notify(_ body: String) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }

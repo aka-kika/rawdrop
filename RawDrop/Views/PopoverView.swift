@@ -5,6 +5,7 @@ struct PopoverView: View {
     @Environment(AppState.self) private var appState
     var onOpenSettings: (() -> Void)?
     @State private var isTargeted = false
+    @State private var hoveredCaptureID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -72,23 +73,46 @@ struct PopoverView: View {
 
     private var compileSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Button {
-                Task { await appState.compile() }
-            } label: {
-                HStack {
-                    if appState.isCompiling {
+            HStack(spacing: 6) {
+                Button {
+                    Task { await appState.compile() }
+                } label: {
+                    HStack {
+                        if appState.isCompiling {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(compileButtonTitle)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
+                .disabled(appState.isCompiling || appState.isLinking || (appState.pendingCaptures.isEmpty && !appState.isCompiling))
+
+                Button {
+                    Task { await appState.linkWiki() }
+                } label: {
+                    if appState.isLinking {
                         ProgressView()
                             .controlSize(.small)
+                    } else {
+                        Image(systemName: "link")
                     }
-                    Text(compileButtonTitle)
-                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .disabled(appState.isCompiling || appState.isLinking)
+                .help("Link pass — cross-link wiki articles (adds ## Related sections)")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
-            .disabled(appState.isCompiling || (appState.pendingCaptures.isEmpty && !appState.isCompiling))
 
             if let progress = appState.compilePhase.progressText, appState.isCompiling || isTerminal(appState.compilePhase) {
+                Text(progress)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let progress = appState.linkPhase.progressText, appState.isLinking || isLinkTerminal(appState.linkPhase) {
                 Text(progress)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -157,10 +181,11 @@ struct PopoverView: View {
 
     private func captureRow(_ item: CaptureItem) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: iconName(for: item.filename))
+            Image(systemName: item.isDuplicate ? "exclamationmark.triangle.fill" : iconName(for: item.filename))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(item.isDuplicate ? AnyShapeStyle(Color.orange) : AnyShapeStyle(.secondary))
                 .frame(width: 14)
+                .help(item.isDuplicate ? "Same content as \(item.duplicateOf ?? "another capture")" : "")
             VStack(alignment: .leading, spacing: 0) {
                 Text(item.filename)
                     .font(.caption)
@@ -169,12 +194,27 @@ struct PopoverView: View {
                 if !item.detailLabel.isEmpty {
                     Text(item.detailLabel)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(item.isDuplicate ? AnyShapeStyle(Color.orange) : AnyShapeStyle(.tertiary))
                 }
             }
             Spacer(minLength: 0)
+            if !item.isCompiled && hoveredCaptureID == item.id {
+                Button {
+                    appState.removeCapture(item)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Remove from captures (file goes to Trash)")
+            }
         }
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            hoveredCaptureID = hovering ? item.id : (hoveredCaptureID == item.id ? nil : hoveredCaptureID)
+        }
         .opacity(item.isCompiled ? 0.5 : 1.0)
     }
 
@@ -221,6 +261,13 @@ struct PopoverView: View {
     private func isTerminal(_ phase: CompilePhase) -> Bool {
         switch phase {
         case .finished, .nothingNew, .failed: return true
+        default: return false
+        }
+    }
+
+    private func isLinkTerminal(_ phase: LinkPhase) -> Bool {
+        switch phase {
+        case .finished, .nothingToLink, .failed: return true
         default: return false
         }
     }

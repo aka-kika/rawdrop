@@ -2,6 +2,23 @@
 
 Append-only. Newest on top. What shipped — not why (see DECISIONS.md).
 
+## [0.4.0] — 2026-08-05
+
+### Added
+- Link pass (link button next to Compile): cross-links wiki articles with the configured model — each article gets a machine-owned `## Related` section (up to 5 exact-title `[[wikilinks]]`, validated against the wiki). Incremental: only articles never linked before are processed; compile passes preserve the section (stored in compile-state, excluded from the human-edit hash)
+- Remove button (×) on pending capture rows — hover a row to drop a mistaken insert; the raw file moves to the Trash (recoverable) and is excluded from the compile
+- Duplicate warning for uncompiled captures: pending items with identical content are flagged orange with "duplicate of <original>" (compiled sources are never flagged)
+- "Save Key" button next to the Ollama Cloud API key — stores the key in the Keychain immediately without touching the rest of the form
+
+### Changed
+- Settings **Save** now applies and closes the window (stays open only if the Keychain write fails, with the error shown)
+- "Save Key" shows a green **Saved ✓** indicator inline (clears when the key is edited)
+- Link pass posts a notification when done (compile already did); an empty model reply now counts as "no related articles" instead of aborting the pass, and transient errors skip the article with retry on the next pass
+
+### Fixed
+- Model output markdown (`**bold**`, backticks, `#`) no longer leaks into article titles — previously produced junk wiki filenames like `-- --Topic--.md`, broken `[[wikilinks]]` in `_index.md`, and polluted tags
+- Doubled `## Compiled` headings: the model echoing the heading inside the body is stripped on write, and already-damaged articles heal on the next compile pass
+
 ## [0.3.8] — 2026-07-10
 
 ### Added

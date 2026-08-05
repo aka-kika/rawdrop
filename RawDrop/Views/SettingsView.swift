@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var appearance: AppAppearance = .system
     @State private var saveNote: String?
     @State private var keySaveError: String?
+    @State private var keySaved = false
 
     var body: some View {
         Form {
@@ -82,9 +83,25 @@ struct SettingsView: View {
                     .help("Local default: http://localhost:11434")
 
                 if preset == .cloud || ollamaURL.contains("ollama.com") {
-                    SecureField("API key", text: $apiKey)
-                        .textFieldStyle(.roundedBorder)
-                    Text("Keychain only. Create at ollama.com/settings/keys.")
+                    HStack(spacing: 8) {
+                        SecureField("API key", text: $apiKey)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: apiKey) { _, _ in
+                                keySaved = false
+                            }
+                        Button("Save Key") {
+                            saveAPIKeyOnly()
+                        }
+                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        if keySaved {
+                            Label("Saved", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                                .labelStyle(.titleAndIcon)
+                                .transition(.opacity)
+                        }
+                    }
+                    Text("Keychain only. Create at ollama.com/settings/keys. Save Key stores it right away — other settings stay as they are.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -163,9 +180,11 @@ struct SettingsView: View {
 
             Section {
                 Button("Save") {
-                    let seeded = applyToState()
-                    saveNote = seeded ? "Saved · vault ready" : "Saved"
-                    keySaveError = nil
+                    applyToState()
+                    if keySaveError == nil {
+                        // Applied cleanly — close the window
+                        SettingsWindowController.shared.close()
+                    }
                 }
                 .keyboardShortcut(.defaultAction)
 
@@ -255,6 +274,19 @@ struct SettingsView: View {
                 }
                 .padding(.top, 4)
             }
+        }
+    }
+
+    /// Persist just the API key to the Keychain, leaving every other field untouched.
+    private func saveAPIKeyOnly() {
+        do {
+            try OllamaSecrets.setAPIKey(apiKey.trimmingCharacters(in: .whitespacesAndNewlines))
+            keySaveError = nil
+            withAnimation { keySaved = true }
+            appState.applyOllamaConfig()
+        } catch {
+            keySaved = false
+            keySaveError = error.localizedDescription
         }
     }
 
