@@ -55,8 +55,14 @@ die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$1" >&2; exit 1; }
 # ---- 0. Preconditions -------------------------------------------------------
 command -v xcodegen  >/dev/null || die "xcodegen not found (brew install xcodegen)"
 command -v create-dmg >/dev/null || die "create-dmg not found (brew install create-dmg)"
-security find-identity -v -p codesigning 2>/dev/null | grep -qF "$SIGN_IDENTITY" \
-  || die "signing identity not in keychain: $SIGN_IDENTITY"
+
+# Resolve the identity NAME to a unique cert HASH and sign with that everywhere.
+# The keychain can hold duplicate certs under the same name, and codesign then
+# rejects the name as "ambiguous" (bit the 0.4.0 release). First match wins.
+SIGN_HASH="$(security find-identity -v -p codesigning 2>/dev/null \
+  | grep -F "$SIGN_IDENTITY" | head -1 | awk '{print $2}')"
+[ -n "$SIGN_HASH" ] || die "signing identity not in keychain: $SIGN_IDENTITY"
+echo "    signing cert: $SIGN_HASH ($SIGN_IDENTITY)"
 
 VERSION="$(grep 'MARKETING_VERSION' project.yml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
 [ -n "$VERSION" ] || die "could not read MARKETING_VERSION from project.yml"
@@ -91,7 +97,7 @@ rm -rf DerivedData/Build/Products/Release
 xcodebuild -scheme "$SCHEME" -configuration Release -derivedDataPath ./DerivedData \
   ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
   CODE_SIGN_STYLE=Manual \
-  CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+  CODE_SIGN_IDENTITY="$SIGN_HASH" \
   DEVELOPMENT_TEAM="$TEAM_ID" \
   CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
   OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime" \
@@ -118,7 +124,7 @@ create-dmg \
   --icon "$SCHEME.app" 150 170 --app-drop-link 450 170 --hide-extension "$SCHEME.app" \
   "$DMG" "$STAGE" >/dev/null 2>&1 || true   # create-dmg exits nonzero on cosmetic warnings
 [ -f "$DMG" ] || die "DMG was not created at $DMG"
-codesign --force --sign "$SIGN_IDENTITY" --timestamp "$DMG"
+codesign --force --sign "$SIGN_HASH" --timestamp "$DMG"
 echo "    $DMG ($(du -h "$DMG" | cut -f1))"
 
 # ---- 4. Notarize + staple ---------------------------------------------------
