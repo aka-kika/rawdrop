@@ -96,6 +96,7 @@ enum LinkService {
         }
 
         var updated = 0
+        var consecutiveFailures = 0
         for (index, file) in todo.enumerated() {
             let filename = file.lastPathComponent
             let title = titleByFilename[filename] ?? filename
@@ -103,19 +104,33 @@ enum LinkService {
 
             let excerpt = CompileService.articleExcerpt(of: file)
             let candidates = allTitles.filter { $0 != title }
-            let reply = try await ollama.chat(
-                model: settings.ollamaModel,
-                system: systemPrompt,
-                user: """
-                ARTICLE: \(title)
+            let reply: String
+            do {
+                reply = try await ollama.chat(
+                    model: settings.ollamaModel,
+                    system: systemPrompt,
+                    user: """
+                    ARTICLE: \(title)
 
-                EXCERPT:
-                \(excerpt)
+                    EXCERPT:
+                    \(excerpt)
 
-                CANDIDATE TITLES (pick only from these, exact spelling):
-                \(candidates.joined(separator: "\n"))
-                """
-            )
+                    CANDIDATE TITLES (pick only from these, exact spelling):
+                    \(candidates.joined(separator: "\n"))
+                    """
+                )
+                consecutiveFailures = 0
+            } catch OllamaError.emptyReply {
+                // A valid answer — the model found nothing related. Record and move on.
+                reply = ""
+                consecutiveFailures = 0
+            } catch {
+                consecutiveFailures += 1
+                // Transient hiccup: skip this article (it stays unlinked → next pass
+                // retries it). Repeated failures mean the server is gone — stop.
+                if consecutiveFailures >= 3 { throw error }
+                continue
+            }
 
             let related = parseRelated(reply, canonical: canonical, excluding: title)
             // Record even empty results so the pass stays incremental.
