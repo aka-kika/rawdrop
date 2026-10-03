@@ -30,7 +30,7 @@ set -euo pipefail
 SIGN_IDENTITY="Developer ID Application: Veronica Loren (P5RB3W3D58)"
 TEAM_ID="P5RB3W3D58"
 APPLE_ID_DEFAULT="iliuchina@icloud.com"
-NOTARY_PROFILE="${NOTARY_PROFILE:-rawdrop-notary}"  # keychain profile name
+NOTARY_PROFILE="${NOTARY_PROFILE:-kika-notary}"  # keychain profile name
 REPO="aka-kika/rawdrop"
 SCHEME="RawDrop"
 # -----------------------------------------------------------------------------
