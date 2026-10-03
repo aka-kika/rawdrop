@@ -58,9 +58,9 @@ command -v create-dmg >/dev/null || die "create-dmg not found (brew install crea
 
 # Resolve the identity NAME to a unique cert HASH and sign with that everywhere.
 # The keychain can hold duplicate certs under the same name, and codesign then
-# rejects the name as "ambiguous" (bit the 0.4.0 release). First match wins.
-SIGN_HASH="$(security find-identity -v -p codesigning 2>/dev/null \
-  | grep -F "$SIGN_IDENTITY" | head -1 | awk '{print $2}')"
+# rejects the name as "ambiguous" (bit the 0.4.0 release), so the hash is pinned.
+# G2 Developer ID (2026-10-03, valid to 2031-09-17); the old authority ends 2027-02-01.
+SIGN_HASH="${RAWDROP_SIGN_HASH:-7E3E9BC6656A41A13F77F5C05E1663E77419388E}"
 [ -n "$SIGN_HASH" ] || die "signing identity not in keychain: $SIGN_IDENTITY"
 echo "    signing cert: $SIGN_HASH ($SIGN_IDENTITY)"
 
